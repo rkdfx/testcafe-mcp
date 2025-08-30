@@ -61,26 +61,6 @@ npm run lint:fix
 
 ### MCP Client Configuration
 
-#### Kiro IDE Configuration
-Add to your Kiro IDE MCP configuration (`.kiro/settings/mcp.json`):
-
-```json
-{
-  "mcpServers": {
-    "testcafe": {
-      "command": "node",
-      "args": ["./dist/index.js"],
-      "cwd": "/path/to/testcafe-mcp-server",
-      "env": {
-        "NODE_ENV": "production"
-      },
-      "disabled": false,
-      "autoApprove": ["create_test", "validate_test", "inspect_page"]
-    }
-  }
-}
-```
-
 #### Claude Desktop Configuration
 Add to your Claude Desktop configuration (`~/Library/Application Support/Claude/claude_desktop_config.json` on macOS):
 
@@ -718,20 +698,15 @@ MIT License - see LICENSE file for details.
 
 - [TestCafe](https://testcafe.io/) - End-to-end testing framework
 - [Model Context Protocol](https://modelcontextprotocol.io/) - Protocol for AI tool integration
-- [Kiro IDE](https://kiro.ai/) - AI-powered development environment
 
 ## 📚 Documentation
 
 ### Core Documentation
-- **[Installation Guide](docs/INSTALLATION.md)** - Complete setup instructions for all platforms
 - **[API Reference](docs/API.md)** - Detailed API documentation with examples
-- **[Troubleshooting Guide](docs/TROUBLESHOOTING.md)** - Solutions for common issues
 
 ### Integration Guides
-- **[Kiro IDE Integration](examples/kiro-ide-integration.md)** - Setup and usage with Kiro IDE
 - **[Claude Desktop Integration](examples/claude-desktop-integration.md)** - Configuration for Claude Desktop
 - **[Continue.dev Integration](examples/continue-dev-integration.md)** - VS Code integration with Continue.dev
-- **[CI/CD Integration](examples/ci-cd-integration.md)** - GitHub Actions, Jenkins, GitLab CI, Azure DevOps
 
 ### Examples and Patterns
 - **[Basic Examples](examples/)** - Simple usage examples and getting started
@@ -739,10 +714,9 @@ MIT License - see LICENSE file for details.
 - **[MCP Integration Example](examples/mcp-integration-example.js)** - Complete MCP client implementation
 
 ### Quick Links
-- [Installation](docs/INSTALLATION.md#installation-methods) - Get started in minutes
-- [Configuration](docs/INSTALLATION.md#mcp-client-configuration) - Configure your MCP client
 - [API Tools](docs/API.md#tools) - Available MCP tools reference
-- [Troubleshooting](docs/TROUBLESHOOTING.md#common-issues) - Fix common problems
+- [Configuration](#mcp-client-configuration) - Configure your MCP client
+- [Examples](#examples) - Usage examples and patterns
 
 ## 🤝 Contributing
 
@@ -751,7 +725,7 @@ We welcome contributions! Here's how to get started:
 ### Development Setup
 ```bash
 # Fork and clone the repository
-git clone https://github.com/your-username/testcafe-mcp-server.git
+git clone https://github.com/your-username/testcafe-mcp.git
 cd testcafe-mcp-server
 
 # Install dependencies
@@ -789,28 +763,3 @@ When reporting bugs, please include:
 - Steps to reproduce
 - Expected vs actual behavior
 
-## 📞 Support
-
-### Getting Help
-- **[GitHub Issues](https://github.com/your-org/testcafe-mcp-server/issues)** - Report bugs and request features
-- **[Discussions](https://github.com/your-org/testcafe-mcp-server/discussions)** - Ask questions and share ideas
-- **[Documentation](docs/)** - Comprehensive guides and references
-
-### Community
-- Join our community discussions
-- Share your testing patterns and examples
-- Contribute to documentation improvements
-- Help others with their testing challenges
-
-### Commercial Support
-For enterprise support, training, and custom development:
-- Email: support@testcafe-mcp.com
-- Professional services available
-- Custom integration assistance
-- Priority support options
-
----
-
-**Built with ❤️ for the AI-driven testing community**
-
-*TestCafe MCP Server - Bridging AI and automated testing for the future of software quality assurance.*

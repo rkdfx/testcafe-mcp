@@ -15,7 +15,8 @@ import {
   ExecuteTestTool,
   ValidateTestTool,
   InteractTool,
-  InspectPageTool
+  InspectPageTool,
+  ConsoleLogsTool
 } from './tools/index.js';
 
 async function main() {
@@ -44,7 +45,8 @@ async function main() {
       new ExecuteTestTool(testCafeService),
       new ValidateTestTool(testCafeService),
       new InteractTool(),
-      new InspectPageTool()
+      new InspectPageTool(),
+      new ConsoleLogsTool()
     ];
 
     server.registerTools(tools);
