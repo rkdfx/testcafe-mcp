@@ -718,7 +718,6 @@ MIT License - see LICENSE file for details.
 
 - [TestCafe](https://testcafe.io/) - End-to-end testing framework
 - [Model Context Protocol](https://modelcontextprotocol.io/) - Protocol for AI tool integration
-- [Kiro IDE](https://kiro.ai/) - AI-powered development environment
 
 ## 📚 Documentation
 
@@ -751,7 +750,7 @@ We welcome contributions! Here's how to get started:
 ### Development Setup
 ```bash
 # Fork and clone the repository
-git clone https://github.com/your-username/testcafe-mcp-server.git
+git clone https://github.com/your-username/testcafe-mcp.git
 cd testcafe-mcp-server
 
 # Install dependencies
@@ -789,28 +788,3 @@ When reporting bugs, please include:
 - Steps to reproduce
 - Expected vs actual behavior
 
-## 📞 Support
-
-### Getting Help
-- **[GitHub Issues](https://github.com/your-org/testcafe-mcp-server/issues)** - Report bugs and request features
-- **[Discussions](https://github.com/your-org/testcafe-mcp-server/discussions)** - Ask questions and share ideas
-- **[Documentation](docs/)** - Comprehensive guides and references
-
-### Community
-- Join our community discussions
-- Share your testing patterns and examples
-- Contribute to documentation improvements
-- Help others with their testing challenges
-
-### Commercial Support
-For enterprise support, training, and custom development:
-- Email: support@testcafe-mcp.com
-- Professional services available
-- Custom integration assistance
-- Priority support options
-
----
-
-**Built with ❤️ for the AI-driven testing community**
-
-*TestCafe MCP Server - Bridging AI and automated testing for the future of software quality assurance.*
