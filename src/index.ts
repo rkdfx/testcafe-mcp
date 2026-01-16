@@ -16,7 +16,11 @@ import {
   ValidateTestTool,
   InteractTool,
   InspectPageTool,
-  ConsoleLogsTool
+  ConsoleLogsTool,
+  // New tools
+  AccessibilitySnapshotTool,
+  TabManagementTool,
+  NetworkLogsTool
 } from './tools/index.js';
 
 async function main() {
@@ -46,7 +50,11 @@ async function main() {
       new ValidateTestTool(testCafeService),
       new InteractTool(),
       new InspectPageTool(),
-      new ConsoleLogsTool()
+      new ConsoleLogsTool(),
+      // New tools
+      new AccessibilitySnapshotTool(),
+      new TabManagementTool(),
+      new NetworkLogsTool()
     ];
 
     server.registerTools(tools);
