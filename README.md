@@ -1,6 +1,7 @@
 # TestCafe MCP Server
 
 ![GitHub stars](https://img.shields.io/github/stars/rkdfx/testcafe-mcp?style=flat-square&logo=github)
+![CI](https://github.com/rkdfx/testcafe-mcp/workflows/CI/badge.svg)
 ![Visitors](https://api.visitorbadge.io/api/visitors?path=rkdfx%2Ftestcafe-mcp&label=Visitors&countColor=%23263759&style=flat)
 
 A comprehensive Model Context Protocol (MCP) server that bridges AI assistants with TestCafe testing capabilities, enabling AI-driven browser automation and test creation.
