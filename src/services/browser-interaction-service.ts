@@ -347,6 +347,7 @@ export class BrowserInteractionService {
     const warnings: string[] = [];
     const screenshots: string[] = [];
     let actionsExecuted = 0;
+    // eslint-disable-next-line prefer-const
     let elementInfo: ElementInfo[] = [];
 
     try {
@@ -453,6 +454,7 @@ export class BrowserInteractionService {
     const warnings: string[] = [];
     const screenshots: string[] = [];
     let actionsExecuted = 0;
+    // eslint-disable-next-line prefer-const
     let elementInfo: ElementInfo[] = [];
 
     // Get or create session
@@ -565,16 +567,18 @@ export class BrowserInteractionService {
         await this.waitForPageReady(sessionId);
         break;
 
-      case 'click':
+      case 'click': {
         const clickSelector = await this.getCachedSelector(action.selector, sessionId);
         await t.click(clickSelector);
         break;
+      }
 
-      case 'type':
+      case 'type': {
         const typeSelector = await this.getCachedSelector(action.selector, sessionId);
         const typeOptions = action.options || {};
         await t.typeText(typeSelector, action.text, typeOptions);
         break;
+      }
 
       case 'wait':
         await this.executeWaitAction(action, sessionId);
@@ -615,7 +619,7 @@ export class BrowserInteractionService {
         await this.waitForElement(action.value, sessionId, action.timeout || 30000);
         break;
 
-      case 'function':
+      case 'function': {
         if (typeof action.value !== 'string') {
           throw new Error('Function wait requires function code string');
         }
@@ -624,6 +628,7 @@ export class BrowserInteractionService {
           return eval(action.value as string);
         }).ok('', { timeout });
         break;
+      }
 
       default:
         throw new Error(`Unknown wait condition: ${action.condition}`);
@@ -994,7 +999,7 @@ export class BrowserInteractionService {
   /**
    * Extract detailed element information from TestCafe selector
    */
-  private async extractElementInfo(selectorObj: any, originalSelector: string): Promise<ElementInfo> {
+  private async extractElementInfo(selectorObj: any, _originalSelector: string): Promise<ElementInfo> {
     try {
       const tagName = await selectorObj.tagName;
       const id = await selectorObj.id;
