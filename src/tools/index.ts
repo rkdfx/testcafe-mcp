@@ -13,6 +13,7 @@ export { ConsoleLogsTool } from './console-logs-tool.js';
 export { AccessibilitySnapshotTool } from './accessibility-snapshot-tool.js';
 export { TabManagementTool } from './tab-management-tool.js';
 export { NetworkLogsTool } from './network-logs-tool.js';
+export { DialogHandlingTool } from './dialog-handling-tool.js';
 
 export type {
   CreateTestInput
@@ -56,3 +57,10 @@ export type {
 export type {
   NetworkLogsInput
 } from './network-logs-tool.js';
+
+export type {
+  DialogHandlingInput,
+  DialogEntry,
+  DialogHandlingResult,
+  DialogHandlerConfig
+} from './dialog-handling-tool.js';

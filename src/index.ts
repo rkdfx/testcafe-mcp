@@ -20,7 +20,8 @@ import {
   // New tools
   AccessibilitySnapshotTool,
   TabManagementTool,
-  NetworkLogsTool
+  NetworkLogsTool,
+  DialogHandlingTool
 } from './tools/index.js';
 
 async function main() {
@@ -54,7 +55,8 @@ async function main() {
       // New tools
       new AccessibilitySnapshotTool(),
       new TabManagementTool(),
-      new NetworkLogsTool()
+      new NetworkLogsTool(),
+      new DialogHandlingTool()
     ];
 
     server.registerTools(tools);
