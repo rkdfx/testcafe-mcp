@@ -4,7 +4,7 @@
 ![CI](https://github.com/rkdfx/testcafe-mcp/workflows/CI/badge.svg)
 ![Visitors](https://api.visitorbadge.io/api/visitors?path=rkdfx%2Ftestcafe-mcp&label=Visitors&countColor=%23263759&style=flat)
 
-A comprehensive Model Context Protocol (MCP) server that bridges AI assistants with TestCafe testing capabilities, enabling AI-driven browser automation and test creation.
+A comprehensive Model Context Protocol (MCP) server that bridges AI assistants with TestCafe testing capabilities, enabling AI-driven browser automation and test creation. Provides 17 MCP tools including agentic browser control with the snapshot → ref → act pattern.
 
 ## 🚀 Features
 
@@ -14,6 +14,11 @@ A comprehensive Model Context Protocol (MCP) server that bridges AI assistants w
 - **Test Validation**: Validate test code syntax, structure, and best practices
 - **Browser Interaction**: Perform real-time browser interactions with live feedback
 - **Page Inspection**: Analyze web pages, discover elements, and suggest optimal selectors
+
+### Agentic Browser Control
+- **Persistent Browser Session**: One headless browser stays open across tool calls — no re-launching per action
+- **Snapshot → Ref → Act Pattern**: Get an accessibility tree with element refs, then click/type/interact by ref
+- **7 Granular Tools**: `browser_navigate`, `browser_snapshot`, `browser_click`, `browser_type`, `browser_press_key`, `browser_evaluate`, `browser_take_screenshot`
 
 ### Advanced Features
 - **Real Browser Integration**: Execute actions in actual browser instances
@@ -311,24 +316,110 @@ Analyze web pages and discover elements.
 }
 ```
 
-**Example Usage:**
+### 6–10. Utility Tools
+
+| Tool | Description |
+|------|-------------|
+| `get_console_logs` | Capture browser console logs (errors, warnings, info, debug) |
+| `get_accessibility_snapshot` | Return the accessibility tree of a web page |
+| `browser_tabs` | List, create, close, or switch browser tabs |
+| `get_network_logs` | Capture network requests and responses for debugging |
+| `handle_dialogs` | Capture and handle native browser dialogs (alert, confirm, prompt) |
+
+---
+
+### Agentic Browser Control (11–17)
+
+These tools provide a **persistent browser session** with the **snapshot → ref → act** pattern — the same approach used by Playwright MCP. One headless browser stays open across all tool calls, enabling multi-step agentic workflows.
+
+**How it works:**
+1. **`browser_navigate`** — open a URL in the persistent browser
+2. **`browser_snapshot`** — get an accessibility tree with `ref` IDs on interactive elements
+3. **`browser_click` / `browser_type` / `browser_press_key`** — act on elements using their `ref`
+4. **`browser_evaluate`** — run arbitrary JavaScript in the browser
+5. **`browser_take_screenshot`** — capture a PNG/JPEG screenshot
+
+#### browser_navigate
+Navigate to a URL in the persistent browser session.
+```json
+{ "url": "https://example.com" }
+```
+
+#### browser_snapshot
+Capture an accessibility snapshot of the current page. Returns a formatted text tree with `ref` IDs on interactive elements. Use these refs with other `browser_*` tools.
+```json
+{}
+```
+
+**Example output:**
+```
+Page: Example (https://example.com)
+
+- banner
+  - navigation "Main"
+    - link "Home" [ref=e1]
+    - link "About" [ref=e2]
+- main
+  - heading "Welcome" [level=1] [ref=e3]
+  - searchbox "Search" [ref=e4]
+  - button "Go" [ref=e5]
+```
+
+#### browser_click
+Click an element by its snapshot ref.
+```json
+{ "ref": "e5", "element": "Go button" }
+```
+
+#### browser_type
+Type text into an element by its snapshot ref.
+```json
+{ "ref": "e4", "text": "search query", "submit": true }
+```
+
+#### browser_press_key
+Press a keyboard key (e.g. `enter`, `tab`, `escape`, `backspace`).
+```json
+{ "key": "enter" }
+```
+
+#### browser_evaluate
+Evaluate a JavaScript expression in the browser context.
+```json
+{ "function": "document.title" }
+```
+
+#### browser_take_screenshot
+Take a screenshot of the current page. Returns the image as base64.
+```json
+{ "type": "png", "fullPage": false }
+```
+
+#### Agentic Workflow Example
+
 ```javascript
-// Analyze page structure
-{
-  "operation": "analyze",
-  "target": {
-    "type": "url",
-    "url": "https://example.com"
-  },
-  "executeLive": true,
-  "browser": "chrome:headless",
-  "screenshots": true,
-  "options": {
-    "includeHidden": false,
-    "includeText": true,
-    "includeAttributes": true
-  }
-}
+// Step 1: Navigate
+await mcpClient.callTool('browser_navigate', { url: 'https://en.wikipedia.org' });
+
+// Step 2: Get page snapshot with element refs
+const snapshot = await mcpClient.callTool('browser_snapshot', {});
+// Returns tree with refs like: searchbox "Search Wikipedia" [ref=e5]
+
+// Step 3: Type into the search box using its ref
+await mcpClient.callTool('browser_type', {
+  ref: 'e5', text: 'TestCafe', submit: true
+});
+
+// Step 4: Take a new snapshot of the results page
+const results = await mcpClient.callTool('browser_snapshot', {});
+
+// Step 5: Click a result link
+await mcpClient.callTool('browser_click', { ref: 'e12' });
+
+// Step 6: Get the page title
+const title = await mcpClient.callTool('browser_evaluate', {
+  function: 'document.title'
+});
 ```
 
 ## 📚 Examples

@@ -66,7 +66,7 @@ describe('TestCafe MCP Integration', () => {
       
       expect(result.content.length).toBeGreaterThan(0);
       expect(result.content[0].type).toBe('text');
-      expect(result.content[0].text).toContain('Successfully created');
+      expect((result.content[0] as { type: 'text'; text: string }).text).toContain('Successfully created');
     });
   });
 
@@ -82,10 +82,10 @@ describe('TestCafe MCP Integration', () => {
           type: 'code' as const,
           content: `
             import { Selector } from 'testcafe';
-            
+
             fixture('Test Fixture')
               .page('https://example.com');
-            
+
             test('Simple test', async t => {
               await t.click('#button');
             });
@@ -97,10 +97,10 @@ describe('TestCafe MCP Integration', () => {
       };
 
       const result = await validateTool.execute(args);
-      
+
       expect(result.content.length).toBeGreaterThan(0);
       expect(result.content[0].type).toBe('text');
-      expect(result.content[0].text).toContain('VALID');
+      expect((result.content[0] as { type: 'text'; text: string }).text).toContain('VALID');
     });
 
     it('should detect invalid test code', async () => {
@@ -118,10 +118,10 @@ describe('TestCafe MCP Integration', () => {
       };
 
       const result = await validateTool.execute(args);
-      
+
       expect(result.content.length).toBeGreaterThan(0);
       expect(result.content[0].type).toBe('text');
-      expect(result.content[0].text).toContain('INVALID');
+      expect((result.content[0] as { type: 'text'; text: string }).text).toContain('INVALID');
     });
   });
 
@@ -149,7 +149,7 @@ describe('TestCafe MCP Integration', () => {
       };
 
       const createResult = await createTool.execute(createArgs);
-      expect(createResult.content[0].text).toContain('Successfully created');
+      expect((createResult.content[0] as { type: 'text'; text: string }).text).toContain('Successfully created');
 
       // Step 2: Validate the generated structure
       const validateArgs = {
@@ -163,7 +163,7 @@ describe('TestCafe MCP Integration', () => {
       };
 
       const validateResult = await validateTool.execute(validateArgs);
-      expect(validateResult.content[0].text).toContain('VALID');
+      expect((validateResult.content[0] as { type: 'text'; text: string }).text).toContain('VALID');
     });
   });
 });
