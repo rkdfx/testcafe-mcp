@@ -15,6 +15,15 @@ export { TabManagementTool } from './tab-management-tool.js';
 export { NetworkLogsTool } from './network-logs-tool.js';
 export { DialogHandlingTool } from './dialog-handling-tool.js';
 
+// Agentic browser control tools
+export { BrowserNavigateTool } from './browser-navigate-tool.js';
+export { BrowserSnapshotTool } from './browser-snapshot-tool.js';
+export { BrowserClickTool } from './browser-click-tool.js';
+export { BrowserTypeTool } from './browser-type-tool.js';
+export { BrowserPressKeyTool } from './browser-press-key-tool.js';
+export { BrowserEvaluateTool } from './browser-evaluate-tool.js';
+export { BrowserScreenshotTool } from './browser-screenshot-tool.js';
+
 export type {
   CreateTestInput
 } from './create-test-tool.js';

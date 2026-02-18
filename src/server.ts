@@ -208,7 +208,10 @@ export class TestCafeMCPServer {
       'validate', 'overwrite', 'headless', 'debug',
       'isVisible', 'isEnabled', 'required', 'optional',
       'replace', 'paste', 'confidential', 'saveToFile',
-      'ctrl', 'alt', 'shift', 'meta'  // modifier keys
+      'ctrl', 'alt', 'shift', 'meta',  // modifier keys
+      'submit', 'slowly', 'doubleClick', 'fullPage',  // browser tools
+      'includeWarnings', 'includeSuggestions', 'includeStatic',
+      'includeHeaders', 'includeBody'
     ];
 
     const isBooleanField = booleanFieldPatterns.some(pattern =>
@@ -353,6 +356,19 @@ export class TestCafeMCPServer {
       return {
         oneOf: schema.options.map((option: any) => this.zodSchemaToJsonSchema(option))
       };
+    }
+
+    // Unwrap ZodOptional, ZodDefault, ZodNullable to get the inner schema
+    if (schema instanceof z.ZodOptional) {
+      return this.zodSchemaToJsonSchema((schema as any)._def.innerType);
+    }
+
+    if (schema instanceof z.ZodDefault) {
+      return this.zodSchemaToJsonSchema((schema as any)._def.innerType);
+    }
+
+    if (schema instanceof z.ZodNullable) {
+      return this.zodSchemaToJsonSchema((schema as any)._def.innerType);
     }
 
     // Fallback for unknown types

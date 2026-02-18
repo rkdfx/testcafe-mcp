@@ -25,8 +25,8 @@ export const BrowserConfigSchema = z.object({
 export const TestCafeConfigSchema = z.object({
   browsers: z.array(BrowserConfigSchema).min(1).default([{
     name: 'chrome',
-    headless: true,
-    args: []
+    headless: false,
+    args: ['disable-native-automation']
   }]),
   timeout: z.number().min(1000).max(300000).default(30000),
   speed: z.number().min(0.01).max(1).default(1),

@@ -4,7 +4,6 @@
  * Provides core TestCafe functionality including test creation, execution, and validation.
  */
 
-import createTestCafe from 'testcafe';
 import { TestCafeConfig, BrowserConfig } from '../config/index.js';
 import { z } from 'zod';
 import { performanceMonitor } from './performance-monitor.js';
@@ -85,6 +84,7 @@ export class TestCafeService {
    */
   async initialize(): Promise<void> {
     if (!this.testCafe) {
+      const { default: createTestCafe } = await import('testcafe');
       this.testCafe = await createTestCafe('localhost', 1337, 1338);
     }
   }
@@ -985,6 +985,9 @@ export class TestCafeService {
         
         // Add stability flags for Chrome/Chromium
         if (browserName.includes('chrome') || browserName.includes('chromium')) {
+          if (!browser.includes('--disable-native-automation')) {
+            enhancedBrowser += ' --disable-native-automation';
+          }
           if (!browser.includes('--no-sandbox')) {
             enhancedBrowser += ' --no-sandbox';
           }

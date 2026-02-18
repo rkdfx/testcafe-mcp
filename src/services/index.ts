@@ -7,6 +7,8 @@ export { BrowserInteractionService } from './browser-interaction-service.js';
 export { PageInspectionService } from './page-inspection-service.js';
 export { PerformanceMonitor, performanceMonitor } from './performance-monitor.js';
 
+export { BrowserSessionManager } from './browser-session-manager.js';
+
 // New services
 export { AccessibilityService } from './accessibility-service.js';
 export { TabManagementService } from './tab-management-service.js';

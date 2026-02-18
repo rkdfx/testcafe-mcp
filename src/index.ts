@@ -21,8 +21,17 @@ import {
   AccessibilitySnapshotTool,
   TabManagementTool,
   NetworkLogsTool,
-  DialogHandlingTool
+  DialogHandlingTool,
+  // Agentic browser control tools
+  BrowserNavigateTool,
+  BrowserSnapshotTool,
+  BrowserClickTool,
+  BrowserTypeTool,
+  BrowserPressKeyTool,
+  BrowserEvaluateTool,
+  BrowserScreenshotTool
 } from './tools/index.js';
+import { BrowserSessionManager } from './services/browser-session-manager.js';
 
 async function main() {
   try {
@@ -44,6 +53,9 @@ async function main() {
     // Initialize server
     const server = new TestCafeMCPServer(config.server);
 
+    // Shared persistent browser session manager
+    const sessionManager = BrowserSessionManager.getInstance();
+
     // Register all tools
     const tools = [
       new CreateTestTool(testCafeService),
@@ -56,7 +68,15 @@ async function main() {
       new AccessibilitySnapshotTool(),
       new TabManagementTool(),
       new NetworkLogsTool(),
-      new DialogHandlingTool()
+      new DialogHandlingTool(),
+      // Agentic browser control tools
+      new BrowserNavigateTool(sessionManager),
+      new BrowserSnapshotTool(sessionManager),
+      new BrowserClickTool(sessionManager),
+      new BrowserTypeTool(sessionManager),
+      new BrowserPressKeyTool(sessionManager),
+      new BrowserEvaluateTool(sessionManager),
+      new BrowserScreenshotTool(sessionManager)
     ];
 
     server.registerTools(tools);
@@ -65,6 +85,7 @@ async function main() {
     const shutdown = async (signal: string) => {
       console.error(`Received ${signal}, shutting down gracefully...`);
       try {
+        await sessionManager.close();
         await testCafeService.close();
         await server.stop();
         console.error('TestCafe MCP Server stopped successfully');
