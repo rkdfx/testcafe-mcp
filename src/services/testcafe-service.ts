@@ -997,6 +997,9 @@ export class TestCafeService {
           if (!browser.includes('--disable-gpu')) {
             enhancedBrowser += ' --disable-gpu';
           }
+          if (!browser.includes('--ignore-certificate-errors')) {
+            enhancedBrowser += ' --ignore-certificate-errors';
+          }
         }
         
         validatedBrowsers.push(enhancedBrowser);
