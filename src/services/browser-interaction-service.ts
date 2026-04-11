@@ -5,6 +5,7 @@
  */
 
 import { z } from 'zod';
+import { escapeString, createTempTestFile, cleanupTempFile } from '../utils/test-runner-utils.js';
 
 /**
  * Browser action schemas
@@ -367,7 +368,7 @@ export class BrowserInteractionService {
 
       // Fallback to temporary test execution
       const testCode = this.generateInteractiveTestCode(actions, options);
-      const tempFile = await this.createTempTestFile(testCode);
+      const tempFile = await createTempTestFile(testCode, 'testcafe-interact-', 'interact-test.js');
 
       try {
         // Execute the interactive test with enhanced configuration
@@ -406,7 +407,7 @@ export class BrowserInteractionService {
         }
 
       } finally {
-        await this.cleanupTempFile(tempFile);
+        await cleanupTempFile(tempFile);
       }
 
       return {
@@ -719,12 +720,12 @@ export class BrowserInteractionService {
 
       // Fallback to temporary test discovery
       const discoveryCode = this.generateElementDiscoveryCode(selector, options);
-      const tempFile = await this.createTempTestFile(discoveryCode);
+      const tempFile = await createTempTestFile(discoveryCode, 'testcafe-interact-', 'interact-test.js');
 
       try {
         const runner = this.testCafeInstance.createRunner();
         runner.src(tempFile);
-        
+
         const browserConfig = this.prepareBrowserConfig(options?.browser || 'chrome:headless');
         runner.browsers([browserConfig]);
 
@@ -739,7 +740,7 @@ export class BrowserInteractionService {
         return this.collectDiscoveredElements(selector, options);
 
       } finally {
-        await this.cleanupTempFile(tempFile);
+        await cleanupTempFile(tempFile);
       }
 
     } catch (error) {
@@ -1164,9 +1165,9 @@ export class BrowserInteractionService {
     testCode += `test('Discover Elements', async t => {\n`;
     
     if (selector) {
-      testCode += `  const elements = Selector('${this.escapeString(selector)}');\n`;
+      testCode += `  const elements = Selector('${escapeString(selector)}');\n`;
       testCode += `  const count = await elements.count;\n`;
-      testCode += `  console.log('Found', count, 'elements matching selector:', '${this.escapeString(selector)}');\n`;
+      testCode += `  console.log('Found', count, 'elements matching selector:', '${escapeString(selector)}');\n`;
       
       testCode += `  for (let i = 0; i < Math.min(count, ${options?.maxElements || 10}); i++) {\n`;
       testCode += `    const element = elements.nth(i);\n`;
@@ -1301,7 +1302,7 @@ export class BrowserInteractionService {
   ): Promise<{ exists: boolean; visible: boolean; enabled: boolean; info?: ElementInfo }> {
     try {
       const validationCode = this.generateElementValidationCode(selector, options);
-      const tempFile = await this.createTempTestFile(validationCode);
+      const tempFile = await createTempTestFile(validationCode, 'testcafe-interact-', 'interact-test.js');
 
       try {
         const runner = this.testCafeInstance.createRunner();
@@ -1322,7 +1323,7 @@ export class BrowserInteractionService {
         };
 
       } finally {
-        await this.cleanupTempFile(tempFile);
+        await cleanupTempFile(tempFile);
       }
 
     } catch (error) {
@@ -1336,7 +1337,7 @@ export class BrowserInteractionService {
   private async getElementInfoWithTempTest(selector: string): Promise<ElementInfo | null> {
     try {
       const infoCode = this.generateElementInfoCode(selector);
-      const tempFile = await this.createTempTestFile(infoCode);
+      const tempFile = await createTempTestFile(infoCode, 'testcafe-interact-', 'interact-test.js');
 
       try {
         const runner = this.testCafeInstance.createRunner();
@@ -1353,7 +1354,7 @@ export class BrowserInteractionService {
         return mockElements.length > 0 ? mockElements[0] : null;
 
       } finally {
-        await this.cleanupTempFile(tempFile);
+        await cleanupTempFile(tempFile);
       }
 
     } catch (error) {
@@ -1375,7 +1376,7 @@ export class BrowserInteractionService {
     let testCode = `import { Selector } from 'testcafe';\n\n`;
     testCode += `fixture('Element Validation');\n\n`;
     testCode += `test('Validate Element', async t => {\n`;
-    testCode += `  const element = Selector('${this.escapeString(selector)}');\n`;
+    testCode += `  const element = Selector('${escapeString(selector)}');\n`;
     testCode += `  await t.expect(element.exists).ok('Element should exist', { timeout: ${timeout} });\n`;
     
     if (requireVisible) {
@@ -1397,7 +1398,7 @@ export class BrowserInteractionService {
     let testCode = `import { Selector } from 'testcafe';\n\n`;
     testCode += `fixture('Element Info');\n\n`;
     testCode += `test('Extract Element Info', async t => {\n`;
-    testCode += `  const element = Selector('${this.escapeString(selector)}');\n`;
+    testCode += `  const element = Selector('${escapeString(selector)}');\n`;
     testCode += `  await t.expect(element.exists).ok('Element should exist');\n`;
     testCode += `  \n`;
     testCode += `  const tagName = await element.tagName;\n`;
@@ -1477,41 +1478,6 @@ export class BrowserInteractionService {
     return elements;
   }
 
-  /**
-   * Create temporary test file
-   */
-  private async createTempTestFile(testCode: string): Promise<string> {
-    const fs = await import('fs/promises');
-    const path = await import('path');
-    const os = await import('os');
-    
-    const tempDir = await fs.mkdtemp(path.join(os.tmpdir(), 'testcafe-interact-'));
-    const tempFile = path.join(tempDir, 'interact-test.js');
-    
-    await fs.writeFile(tempFile, testCode, 'utf8');
-    return tempFile;
-  }
-
-  /**
-   * Clean up temporary files
-   */
-  private async cleanupTempFile(filePath: string): Promise<void> {
-    try {
-      const fs = await import('fs/promises');
-      const path = await import('path');
-      
-      await fs.unlink(filePath);
-      
-      const dir = path.dirname(filePath);
-      try {
-        await fs.rmdir(dir);
-      } catch {
-        // Directory not empty or other error, ignore
-      }
-    } catch (error) {
-      // Ignore cleanup errors
-    }
-  }
 
   /**
    * Ensure directory exists
@@ -1559,7 +1525,7 @@ export class BrowserInteractionService {
       const text = elementInfo.text.trim();
       if (text.length <= 50) { // Only suggest for reasonably short text
         suggestions.push({
-          selector: `Selector('*').withText('${this.escapeString(text)}')`,
+          selector: `Selector('*').withText('${escapeString(text)}')`,
           type: 'text',
           specificity: 70,
           description: `Select by text: "${text}"`
@@ -1595,7 +1561,7 @@ export class BrowserInteractionService {
    * Create assertion helpers for common TestCafe assertions
    */
   generateAssertionCode(assertion: AssertAction): string {
-    const selector = `Selector('${this.escapeString(assertion.selector)}')`;
+    const selector = `Selector('${escapeString(assertion.selector)}')`;
     
     switch (assertion.assertion) {
       case 'exists':
@@ -1608,19 +1574,19 @@ export class BrowserInteractionService {
         if (assertion.expected === undefined) {
           throw new Error('Text assertion requires expected value');
         }
-        return `await t.expect(${selector}.textContent).eql('${this.escapeString(String(assertion.expected))}', 'Element text should match');\n`;
+        return `await t.expect(${selector}.textContent).eql('${escapeString(String(assertion.expected))}', 'Element text should match');\n`;
       
       case 'value':
         if (assertion.expected === undefined) {
           throw new Error('Value assertion requires expected value');
         }
-        return `await t.expect(${selector}.value).eql('${this.escapeString(String(assertion.expected))}', 'Element value should match');\n`;
+        return `await t.expect(${selector}.value).eql('${escapeString(String(assertion.expected))}', 'Element value should match');\n`;
       
       case 'attribute':
         if (!assertion.attribute || assertion.expected === undefined) {
           throw new Error('Attribute assertion requires attribute name and expected value');
         }
-        return `await t.expect(${selector}.getAttribute('${assertion.attribute}')).eql('${this.escapeString(String(assertion.expected))}', 'Attribute should match');\n`;
+        return `await t.expect(${selector}.getAttribute('${assertion.attribute}')).eql('${escapeString(String(assertion.expected))}', 'Attribute should match');\n`;
       
       case 'count':
         if (typeof assertion.expected !== 'number') {
@@ -1683,7 +1649,7 @@ export class BrowserInteractionService {
    * Generate click action code
    */
   private generateClickCode(action: ClickAction): string {
-    const selector = `Selector('${this.escapeString(action.selector)}')`;
+    const selector = `Selector('${escapeString(action.selector)}')`;
     let code = `await t.click(${selector}`;
     
     if (action.options) {
@@ -1722,8 +1688,8 @@ export class BrowserInteractionService {
    * Generate type action code
    */
   private generateTypeCode(action: TypeAction): string {
-    const selector = `Selector('${this.escapeString(action.selector)}')`;
-    let code = `await t.typeText(${selector}, '${this.escapeString(action.text)}'`;
+    const selector = `Selector('${escapeString(action.selector)}')`;
+    let code = `await t.typeText(${selector}, '${escapeString(action.text)}'`;
     
     if (action.options) {
       const options: string[] = [];
@@ -1764,7 +1730,7 @@ export class BrowserInteractionService {
           throw new Error('Element wait requires selector string');
         }
         const timeout = action.timeout || 30000;
-        return `await t.expect(Selector('${this.escapeString(action.value)}').exists).ok('', { timeout: ${timeout} });\n`;
+        return `await t.expect(Selector('${escapeString(action.value)}').exists).ok('', { timeout: ${timeout} });\n`;
       
       case 'function':
         if (typeof action.value !== 'string') {
@@ -1776,13 +1742,6 @@ export class BrowserInteractionService {
       default:
         throw new Error(`Unknown wait condition: ${action.condition}`);
     }
-  }
-
-  /**
-   * Escape string for JavaScript code generation
-   */
-  private escapeString(str: string): string {
-    return str.replace(/'/g, "\\'").replace(/\n/g, '\\n').replace(/\r/g, '\\r');
   }
 
   /**

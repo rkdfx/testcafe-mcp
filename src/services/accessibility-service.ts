@@ -6,6 +6,7 @@
  */
 
 import { z } from 'zod';
+import { escapeString, createTempTestFile, cleanupTempFile, captureRunnerOutput } from '../utils/test-runner-utils.js';
 
 /**
  * Accessibility node in the tree
@@ -106,7 +107,7 @@ export class AccessibilityService {
     }
 
     const testCode = this.generateAccessibilityTreeCode(options);
-    const tempFile = await this.createTempTestFile(testCode);
+    const tempFile = await createTempTestFile(testCode, 'testcafe-a11y-', 'accessibility-test.js');
 
     try {
       const result = await this.executeAccessibilityCapture(tempFile, options);
@@ -115,7 +116,7 @@ export class AccessibilityService {
         captureTime: Date.now() - startTime
       };
     } finally {
-      await this.cleanupTempFile(tempFile);
+      await cleanupTempFile(tempFile);
     }
   }
 
@@ -125,14 +126,14 @@ export class AccessibilityService {
   private generateAccessibilityTreeCode(options: AccessibilitySnapshotOptions): string {
     const includeHidden = options.includeHidden ? 'true' : 'false';
     const maxDepth = options.maxDepth;
-    const rootSelector = options.selector ? `'${this.escapeString(options.selector)}'` : 'null';
+    const rootSelector = options.selector ? `'${escapeString(options.selector)}'` : 'null';
     const includeRoles = options.includeRoles ? JSON.stringify(options.includeRoles) : 'null';
     const excludeRoles = options.excludeRoles ? JSON.stringify(options.excludeRoles) : 'null';
 
     return `import { Selector, ClientFunction } from 'testcafe';
 
 fixture('Accessibility Snapshot')
-  .page('${this.escapeString(options.url)}');
+  .page('${escapeString(options.url)}');
 
 test('Capture Accessibility Tree', async t => {
   // Wait for page to load
@@ -629,26 +630,14 @@ test('Capture Accessibility Tree', async t => {
     runner.src(tempFile);
     runner.browsers([options.browser || 'chrome:headless']);
 
-    let capturedOutput = '';
-    const originalLog = console.log;
-
-    console.log = (...args: any[]) => {
-      const message = args.join(' ');
-      capturedOutput += message + '\n';
-    };
-
-    try {
-      await runner.run({
-        skipJsErrors: true,
-        skipUncaughtErrors: true,
-        quarantineMode: false,
-        selectorTimeout: 5000,
-        assertionTimeout: 5000,
-        pageLoadTimeout: 30000
-      });
-    } finally {
-      console.log = originalLog;
-    }
+    const capturedOutput = await captureRunnerOutput(runner, {
+      skipJsErrors: true,
+      skipUncaughtErrors: true,
+      quarantineMode: false,
+      selectorTimeout: 5000,
+      assertionTimeout: 5000,
+      pageLoadTimeout: 30000
+    });
 
     // Parse result from output
     const resultMatch = capturedOutput.match(/ACCESSIBILITY_SNAPSHOT_RESULT: (.+)/);
@@ -682,46 +671,4 @@ test('Capture Accessibility Tree', async t => {
     return this.generateAccessibilityTreeCode(validatedOptions);
   }
 
-  /**
-   * Create temporary test file
-   */
-  private async createTempTestFile(testCode: string): Promise<string> {
-    const fs = await import('fs/promises');
-    const path = await import('path');
-    const os = await import('os');
-
-    const tempDir = await fs.mkdtemp(path.join(os.tmpdir(), 'testcafe-a11y-'));
-    const tempFile = path.join(tempDir, 'accessibility-test.js');
-
-    await fs.writeFile(tempFile, testCode, 'utf8');
-    return tempFile;
-  }
-
-  /**
-   * Clean up temporary files
-   */
-  private async cleanupTempFile(filePath: string): Promise<void> {
-    try {
-      const fs = await import('fs/promises');
-      const path = await import('path');
-
-      await fs.unlink(filePath);
-
-      const dir = path.dirname(filePath);
-      try {
-        await fs.rmdir(dir);
-      } catch {
-        // Directory not empty or other error, ignore
-      }
-    } catch {
-      // Ignore cleanup errors
-    }
-  }
-
-  /**
-   * Escape string for JavaScript
-   */
-  private escapeString(str: string): string {
-    return str.replace(/\\/g, '\\\\').replace(/'/g, "\\'").replace(/\n/g, '\\n').replace(/\r/g, '\\r');
-  }
 }

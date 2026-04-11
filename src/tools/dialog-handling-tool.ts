@@ -8,6 +8,7 @@
 import { z } from 'zod';
 import { CallToolResult, ErrorCode, McpError } from '@modelcontextprotocol/sdk/types.js';
 import { MCPTool } from '../server.js';
+import { escapeString } from '../utils/test-runner-utils.js';
 
 /**
  * Dialog entry
@@ -156,7 +157,7 @@ export class DialogHandlingTool implements MCPTool {
   private generateDialogHandlerCode(args: DialogHandlingInput): string {
     const config = args.handlerConfig || { autoHandle: true };
     const confirmDefault = config.defaults?.confirm ?? true;
-    const promptDefault = this.escapeString(config.defaults?.prompt ?? '');
+    const promptDefault = escapeString(config.defaults?.prompt ?? '');
 
     let code = `import { Selector } from 'testcafe';
 
@@ -164,7 +165,7 @@ export class DialogHandlingTool implements MCPTool {
 const dialogHistory = [];
 
 fixture('Dialog Handling')
-  .page('${this.escapeString(args.url)}')
+  .page('${escapeString(args.url)}')
   .beforeEach(async t => {
     await t.setNativeDialogHandler((type, text, url) => {
       const entry = { type, text, url, timestamp: Date.now() };
@@ -181,7 +182,7 @@ fixture('Dialog Handling')
           code += ` && /${this.escapeRegex(handler.textPattern)}/i.test(text)`;
         }
         code += `) {
-        entry.response = ${typeof handler.response === 'string' ? `'${this.escapeString(handler.response)}'` : handler.response};
+        entry.response = ${typeof handler.response === 'string' ? `'${escapeString(handler.response)}'` : handler.response};
         dialogHistory.push(entry);
         return entry.response;
       }
@@ -377,19 +378,6 @@ test('Capture Dialogs', async t => {
     });
 
     return grouped;
-  }
-
-  /**
-   * Escape string for JavaScript
-   */
-  private escapeString(str: string): string {
-    return str
-      .replace(/\\/g, '\\\\')
-      .replace(/'/g, "\\'")
-      .replace(/"/g, '\\"')
-      .replace(/\n/g, '\\n')
-      .replace(/\r/g, '\\r')
-      .replace(/\t/g, '\\t');
   }
 
   /**

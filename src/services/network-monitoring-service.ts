@@ -6,6 +6,7 @@
  */
 
 import { z } from 'zod';
+import { escapeString, createTempTestFile, cleanupTempFile, captureRunnerOutput } from '../utils/test-runner-utils.js';
 
 /**
  * Network request information
@@ -120,7 +121,7 @@ export class NetworkMonitoringService {
     }
 
     const testCode = this.generateNetworkCaptureCode(options);
-    const tempFile = await this.createTempTestFile(testCode);
+    const tempFile = await createTempTestFile(testCode, 'testcafe-network-', 'network-monitoring-test.js');
 
     try {
       const result = await this.executeNetworkCapture(tempFile, options);
@@ -129,7 +130,7 @@ export class NetworkMonitoringService {
         captureTime: Date.now() - startTime
       };
     } finally {
-      await this.cleanupTempFile(tempFile);
+      await cleanupTempFile(tempFile);
     }
   }
 
@@ -159,7 +160,7 @@ const logger = RequestLogger(
 );
 
 fixture('Network Monitoring')
-  .page('${this.escapeString(options.url)}')
+  .page('${escapeString(options.url)}')
   .requestHooks(logger);
 
 test('Capture Network Logs', async t => {
@@ -298,7 +299,7 @@ test('Capture Network Logs', async t => {
     const conditions: string[] = [];
 
     if (filter.urlPattern) {
-      conditions.push(`new RegExp('${this.escapeString(filter.urlPattern)}').test(request.url)`);
+      conditions.push(`new RegExp('${escapeString(filter.urlPattern)}').test(request.url)`);
     }
 
     if (filter.methods && filter.methods.length > 0) {
@@ -324,26 +325,14 @@ test('Capture Network Logs', async t => {
     runner.src(tempFile);
     runner.browsers([options.browser || 'chrome:headless']);
 
-    let capturedOutput = '';
-    const originalLog = console.log;
-
-    console.log = (...args: any[]) => {
-      const message = args.join(' ');
-      capturedOutput += message + '\n';
-    };
-
-    try {
-      await runner.run({
-        skipJsErrors: true,
-        skipUncaughtErrors: true,
-        quarantineMode: false,
-        selectorTimeout: 5000,
-        assertionTimeout: 5000,
-        pageLoadTimeout: 30000
-      });
-    } finally {
-      console.log = originalLog;
-    }
+    const capturedOutput = await captureRunnerOutput(runner, {
+      skipJsErrors: true,
+      skipUncaughtErrors: true,
+      quarantineMode: false,
+      selectorTimeout: 5000,
+      assertionTimeout: 5000,
+      pageLoadTimeout: 30000
+    });
 
     // Parse result from output
     const resultMatch = capturedOutput.match(/NETWORK_LOGS_RESULT: (.+)/);
@@ -449,49 +438,6 @@ test('Capture Network Logs', async t => {
       ...options
     });
     return this.generateNetworkCaptureCode(validatedOptions);
-  }
-
-  /**
-   * Create temporary test file
-   */
-  private async createTempTestFile(testCode: string): Promise<string> {
-    const fs = await import('fs/promises');
-    const path = await import('path');
-    const os = await import('os');
-
-    const tempDir = await fs.mkdtemp(path.join(os.tmpdir(), 'testcafe-network-'));
-    const tempFile = path.join(tempDir, 'network-monitoring-test.js');
-
-    await fs.writeFile(tempFile, testCode, 'utf8');
-    return tempFile;
-  }
-
-  /**
-   * Clean up temporary files
-   */
-  private async cleanupTempFile(filePath: string): Promise<void> {
-    try {
-      const fs = await import('fs/promises');
-      const path = await import('path');
-
-      await fs.unlink(filePath);
-
-      const dir = path.dirname(filePath);
-      try {
-        await fs.rmdir(dir);
-      } catch {
-        // Directory not empty or other error, ignore
-      }
-    } catch {
-      // Ignore cleanup errors
-    }
-  }
-
-  /**
-   * Escape string for JavaScript
-   */
-  private escapeString(str: string): string {
-    return str.replace(/\\/g, '\\\\').replace(/'/g, "\\'").replace(/\n/g, '\\n').replace(/\r/g, '\\r');
   }
 
   /**

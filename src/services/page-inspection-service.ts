@@ -6,6 +6,7 @@
 
 import { z } from 'zod';
 import { ElementInfo, SelectorSuggestion, BrowserInteractionService } from './browser-interaction-service.js';
+import { escapeString, createTempTestFile, cleanupTempFile } from '../utils/test-runner-utils.js';
 
 /**
  * Page inspection options schema
@@ -421,9 +422,9 @@ export class PageInspectionService {
       testCode += `  // Discover specific elements with validation (Requirements 4.1, 4.3)\n`;
       testCode += `  const elements = await t.eval(() => {\n`;
       testCode += `    try {\n`;
-      testCode += `      const foundElements = document.querySelectorAll('${this.escapeString(selector)}');\n`;
+      testCode += `      const foundElements = document.querySelectorAll('${escapeString(selector)}');\n`;
       testCode += `      if (foundElements.length === 0) {\n`;
-      testCode += `        console.log('WARNING: No elements found for selector: ${this.escapeString(selector)}');\n`;
+      testCode += `        console.log('WARNING: No elements found for selector: ${escapeString(selector)}');\n`;
       testCode += `        console.log('DEBUG: Available elements on page:', document.querySelectorAll('*').length);\n`;
       testCode += `      }\n`;
       testCode += this.generateEnhancedElementExtractionJS('foundElements', debugMode);
@@ -451,7 +452,7 @@ export class PageInspectionService {
     testCode += `  if (elements.length === 0) {\n`;
     testCode += `    console.log('WARNING: No elements discovered');\n`;
     if (selector) {
-      testCode += `    console.log('DEBUGGING: Check if selector "${this.escapeString(selector)}" is correct');\n`;
+      testCode += `    console.log('DEBUGGING: Check if selector "${escapeString(selector)}" is correct');\n`;
       testCode += `    console.log('DEBUGGING: Ensure the page has loaded completely');\n`;
     }
     testCode += `  } else {\n`;
@@ -557,9 +558,9 @@ export class PageInspectionService {
     screenshots?: string[];
     warnings: string[];
   }> {
-    const tempFile = await this.createTempTestFile(testCode);
+    const tempFile = await createTempTestFile(testCode, 'testcafe-inspect-', 'inspect-test.js');
     const warnings: string[] = [];
-    
+
     try {
       const runner = this.testCafeInstance.createRunner();
       runner.src(tempFile);
@@ -648,7 +649,7 @@ export class PageInspectionService {
         screenshots: []
       };
     } finally {
-      await this.cleanupTempFile(tempFile);
+      await cleanupTempFile(tempFile);
     }
   }
 
@@ -1387,41 +1388,6 @@ export class PageInspectionService {
     return this.generateEnhancedPageInspectionJS(options, false);
   }
 
-  /**
-   * Create temporary test file
-   */
-  private async createTempTestFile(testCode: string): Promise<string> {
-    const fs = await import('fs/promises');
-    const path = await import('path');
-    const os = await import('os');
-    
-    const tempDir = await fs.mkdtemp(path.join(os.tmpdir(), 'testcafe-inspect-'));
-    const tempFile = path.join(tempDir, 'inspect-test.js');
-    
-    await fs.writeFile(tempFile, testCode, 'utf8');
-    return tempFile;
-  }
-
-  /**
-   * Clean up temporary files
-   */
-  private async cleanupTempFile(filePath: string): Promise<void> {
-    try {
-      const fs = await import('fs/promises');
-      const path = await import('path');
-      
-      await fs.unlink(filePath);
-      
-      const dir = path.dirname(filePath);
-      try {
-        await fs.rmdir(dir);
-      } catch {
-        // Directory not empty or other error, ignore
-      }
-    } catch (error) {
-      // Ignore cleanup errors
-    }
-  }
 
   /**
    * Ensure directory exists
@@ -1505,7 +1471,7 @@ export class PageInspectionService {
   generateElementDiscoveryCode(selector: string): string {
     let code = `// Element discovery code\n`;
     code += `const elements = await t.eval(() => {\n`;
-    code += `  const foundElements = document.querySelectorAll('${this.escapeString(selector)}');\n`;
+    code += `  const foundElements = document.querySelectorAll('${escapeString(selector)}');\n`;
     code += `  return Array.from(foundElements).map(el => {\n`;
     code += `    const rect = el.getBoundingClientRect();\n`;
     code += `    return {\n`;
@@ -1526,7 +1492,7 @@ export class PageInspectionService {
     code += `      isEnabled: !el.disabled\n`;
     code += `    };\n`;
     code += `  });\n`;
-    code += `}, '${this.escapeString(selector)}');\n`;
+    code += `}, '${escapeString(selector)}');\n`;
     
     return code;
   }
@@ -2136,10 +2102,4 @@ export class PageInspectionService {
     return report;
   }
 
-  /**
-   * Escape string for JavaScript code generation
-   */
-  private escapeString(str: string): string {
-    return str.replace(/'/g, "\\'").replace(/\n/g, '\\n').replace(/\r/g, '\\r');
-  }
 }

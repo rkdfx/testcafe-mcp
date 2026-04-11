@@ -6,6 +6,7 @@
  */
 
 import { z } from 'zod';
+import { escapeString, createTempTestFile, cleanupTempFile, captureRunnerOutput } from '../utils/test-runner-utils.js';
 
 /**
  * Tab/window information
@@ -89,13 +90,13 @@ export class TabManagementService {
     }
 
     const testCode = this.generateListTabsCode(options.initialUrl || 'about:blank');
-    const tempFile = await this.createTempTestFile(testCode);
+    const tempFile = await createTempTestFile(testCode, 'testcafe-tabs-', 'tab-management-test.js');
 
     try {
       const result = await this.executeTabOperation(tempFile, options.browser);
       return result.tabs || [];
     } finally {
-      await this.cleanupTempFile(tempFile);
+      await cleanupTempFile(tempFile);
     }
   }
 
@@ -108,7 +109,7 @@ export class TabManagementService {
     }
 
     const testCode = this.generateCreateTabCode(url, options?.waitForLoad ?? true);
-    const tempFile = await this.createTempTestFile(testCode);
+    const tempFile = await createTempTestFile(testCode, 'testcafe-tabs-', 'tab-management-test.js');
 
     try {
       const result = await this.executeTabOperation(tempFile, options?.browser);
@@ -124,7 +125,7 @@ export class TabManagementService {
       }
       throw new Error('Failed to create tab');
     } finally {
-      await this.cleanupTempFile(tempFile);
+      await cleanupTempFile(tempFile);
     }
   }
 
@@ -137,7 +138,7 @@ export class TabManagementService {
     }
 
     const testCode = this.generateCloseTabCode(tabId);
-    const tempFile = await this.createTempTestFile(testCode);
+    const tempFile = await createTempTestFile(testCode, 'testcafe-tabs-', 'tab-management-test.js');
 
     try {
       const result = await this.executeTabOperation(tempFile, options?.browser);
@@ -146,7 +147,7 @@ export class TabManagementService {
       }
       return result.success;
     } finally {
-      await this.cleanupTempFile(tempFile);
+      await cleanupTempFile(tempFile);
     }
   }
 
@@ -159,7 +160,7 @@ export class TabManagementService {
     }
 
     const testCode = this.generateSwitchTabCode(tabId);
-    const tempFile = await this.createTempTestFile(testCode);
+    const tempFile = await createTempTestFile(testCode, 'testcafe-tabs-', 'tab-management-test.js');
 
     try {
       const result = await this.executeTabOperation(tempFile, options?.browser);
@@ -168,7 +169,7 @@ export class TabManagementService {
       }
       throw new Error('Failed to switch to tab: ' + tabId);
     } finally {
-      await this.cleanupTempFile(tempFile);
+      await cleanupTempFile(tempFile);
     }
   }
 
@@ -181,13 +182,13 @@ export class TabManagementService {
     }
 
     const testCode = this.generateGetCurrentTabCode();
-    const tempFile = await this.createTempTestFile(testCode);
+    const tempFile = await createTempTestFile(testCode, 'testcafe-tabs-', 'tab-management-test.js');
 
     try {
       const result = await this.executeTabOperation(tempFile, options?.browser);
       return result.activeTab || null;
     } finally {
-      await this.cleanupTempFile(tempFile);
+      await cleanupTempFile(tempFile);
     }
   }
 
@@ -198,7 +199,7 @@ export class TabManagementService {
     return `import { Selector } from 'testcafe';
 
 fixture('Tab Management - List')
-  .page('${this.escapeString(initialUrl)}');
+  .page('${escapeString(initialUrl)}');
 
 test('List Open Windows', async t => {
   // Get current window info
@@ -234,7 +235,7 @@ fixture('Tab Management - Create')
 
 test('Create New Tab', async t => {
   // Open new window
-  const newWindow = await t.openWindow('${this.escapeString(url)}');
+  const newWindow = await t.openWindow('${escapeString(url)}');
 
   ${waitForLoad ? `
   // Wait for page to load
@@ -395,26 +396,14 @@ test('Get Current Window', async t => {
     runner.src(tempFile);
     runner.browsers([browser || 'chrome:headless']);
 
-    let capturedOutput = '';
-    const originalLog = console.log;
-
-    console.log = (...args: any[]) => {
-      const message = args.join(' ');
-      capturedOutput += message + '\n';
-    };
-
-    try {
-      await runner.run({
-        skipJsErrors: true,
-        skipUncaughtErrors: true,
-        quarantineMode: false,
-        selectorTimeout: 5000,
-        assertionTimeout: 5000,
-        pageLoadTimeout: 30000
-      });
-    } finally {
-      console.log = originalLog;
-    }
+    const capturedOutput = await captureRunnerOutput(runner, {
+      skipJsErrors: true,
+      skipUncaughtErrors: true,
+      quarantineMode: false,
+      selectorTimeout: 5000,
+      assertionTimeout: 5000,
+      pageLoadTimeout: 30000
+    });
 
     // Parse result from output
     const resultPatterns = [
@@ -457,46 +446,4 @@ test('Get Current Window', async t => {
     }
   }
 
-  /**
-   * Create temporary test file
-   */
-  private async createTempTestFile(testCode: string): Promise<string> {
-    const fs = await import('fs/promises');
-    const path = await import('path');
-    const os = await import('os');
-
-    const tempDir = await fs.mkdtemp(path.join(os.tmpdir(), 'testcafe-tabs-'));
-    const tempFile = path.join(tempDir, 'tab-management-test.js');
-
-    await fs.writeFile(tempFile, testCode, 'utf8');
-    return tempFile;
-  }
-
-  /**
-   * Clean up temporary files
-   */
-  private async cleanupTempFile(filePath: string): Promise<void> {
-    try {
-      const fs = await import('fs/promises');
-      const path = await import('path');
-
-      await fs.unlink(filePath);
-
-      const dir = path.dirname(filePath);
-      try {
-        await fs.rmdir(dir);
-      } catch {
-        // Directory not empty or other error, ignore
-      }
-    } catch {
-      // Ignore cleanup errors
-    }
-  }
-
-  /**
-   * Escape string for JavaScript
-   */
-  private escapeString(str: string): string {
-    return str.replace(/\\/g, '\\\\').replace(/'/g, "\\'").replace(/\n/g, '\\n').replace(/\r/g, '\\r');
-  }
 }

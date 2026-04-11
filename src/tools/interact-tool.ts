@@ -10,6 +10,7 @@ import { MCPTool } from '../server.js';
 import { BrowserInteractionService, BrowserAction } from '../services/index.js';
 import { writeFile } from 'fs/promises';
 import { join } from 'path';
+import { escapeString } from '../utils/test-runner-utils.js';
 
 /**
  * Input schema for InteractTool
@@ -424,8 +425,8 @@ export class InteractTool implements MCPTool {
     const testName = args.testName || 'Generated Test';
 
     let testCode = `import { Selector } from 'testcafe';\n\n`;
-    testCode += `fixture('${this.escapeString(fixtureName)}');\n\n`;
-    testCode += `test('${this.escapeString(testName)}', async t => {\n`;
+    testCode += `fixture('${escapeString(fixtureName)}');\n\n`;
+    testCode += `test('${escapeString(testName)}', async t => {\n`;
     
     // Add action code with proper indentation
     const indentedActionCode = actionCode
@@ -518,10 +519,4 @@ export class InteractTool implements MCPTool {
     }
   }
 
-  /**
-   * Escape string for JavaScript code generation
-   */
-  private escapeString(str: string): string {
-    return str.replace(/'/g, "\\'").replace(/\n/g, '\\n').replace(/\r/g, '\\r');
-  }
 }

@@ -8,6 +8,7 @@
 import { z } from 'zod';
 import { CallToolResult, ErrorCode, McpError } from '@modelcontextprotocol/sdk/types.js';
 import { MCPTool } from '../server.js';
+import { escapeString } from '../utils/test-runner-utils.js';
 
 /**
  * Console log entry
@@ -182,7 +183,7 @@ const getConsoleLogs = ClientFunction(() => {
 });
 
 fixture('Console Log Capture')
-  .page('${this.escapeString(args.url)}');
+  .page('${escapeString(args.url)}');
 
 test('Capture Console Logs', async t => {
   // Setup console capture
@@ -343,10 +344,4 @@ test('Capture Console Logs', async t => {
     });
   }
 
-  /**
-   * Escape string for JavaScript
-   */
-  private escapeString(str: string): string {
-    return str.replace(/'/g, "\\'").replace(/\n/g, '\\n').replace(/\r/g, '\\r');
-  }
 }

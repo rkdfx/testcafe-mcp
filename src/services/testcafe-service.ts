@@ -7,6 +7,7 @@
 import { TestCafeConfig, BrowserConfig } from '../config/index.js';
 import { z } from 'zod';
 import { performanceMonitor } from './performance-monitor.js';
+import { escapeString, createTempTestFile, cleanupTempFile } from '../utils/test-runner-utils.js';
 
 /**
  * Test file structure schema
@@ -108,7 +109,7 @@ export class TestCafeService {
     let testCode = `import { Selector } from 'testcafe';\n\n`;
     
     // Add fixture
-    testCode += `fixture('${this.escapeString(structure.fixture)}')`;
+    testCode += `fixture('${escapeString(structure.fixture)}')`;
     if (structure.url) {
       testCode += `\n  .page('${structure.url}')`;
     }
@@ -116,7 +117,7 @@ export class TestCafeService {
 
     // Add tests
     structure.tests.forEach(test => {
-      testCode += `test('${this.escapeString(test.name)}', async t => {\n`;
+      testCode += `test('${escapeString(test.name)}', async t => {\n`;
       
       test.actions.forEach(action => {
         testCode += this.generateActionCode(action, 2);
@@ -311,7 +312,7 @@ export class TestCafeService {
         }
         
         // Clean up temp report file
-        await this.cleanupTempFile(reportPath);
+        await cleanupTempFile(reportPath);
       } catch (parseError) {
         warnings.push(`Failed to parse test report: ${parseError instanceof Error ? parseError.message : String(parseError)}`);
         // Fallback to basic counting
@@ -514,13 +515,13 @@ export class TestCafeService {
         if (!action.selector) {
           throw new Error('Click action requires a selector');
         }
-        return `${spaces}await t.click(Selector('${this.escapeString(action.selector)}'));\n`;
+        return `${spaces}await t.click(Selector('${escapeString(action.selector)}'));\n`;
       
       case 'type':
         if (!action.selector || !action.value) {
           throw new Error('Type action requires selector and value');
         }
-        return `${spaces}await t.typeText(Selector('${this.escapeString(action.selector)}'), '${this.escapeString(action.value)}');\n`;
+        return `${spaces}await t.typeText(Selector('${escapeString(action.selector)}'), '${escapeString(action.value)}');\n`;
       
       case 'wait':
         const timeout = action.timeout || 1000;
@@ -530,18 +531,11 @@ export class TestCafeService {
         if (!action.selector) {
           throw new Error('Assert action requires a selector');
         }
-        return `${spaces}await t.expect(Selector('${this.escapeString(action.selector)}').exists).ok();\n`;
+        return `${spaces}await t.expect(Selector('${escapeString(action.selector)}').exists).ok();\n`;
       
       default:
         throw new Error(`Unknown action type: ${action.type}`);
     }
-  }
-
-  /**
-   * Escape string for JavaScript code generation
-   */
-  private escapeString(str: string): string {
-    return str.replace(/'/g, "\\'").replace(/\n/g, '\\n').replace(/\r/g, '\\r');
   }
 
   /**
@@ -569,43 +563,7 @@ export class TestCafeService {
     }
   }
 
-  /**
-   * Create a temporary test file for execution
-   */
-  async createTempTestFile(testCode: string): Promise<string> {
-    const fs = await import('fs/promises');
-    const path = await import('path');
-    const os = await import('os');
-    
-    const tempDir = await fs.mkdtemp(path.join(os.tmpdir(), 'testcafe-mcp-'));
-    const tempFile = path.join(tempDir, 'temp-test.js');
-    
-    await fs.writeFile(tempFile, testCode, 'utf8');
-    return tempFile;
-  }
 
-  /**
-   * Clean up temporary files
-   */
-  async cleanupTempFile(filePath: string): Promise<void> {
-    try {
-      const fs = await import('fs/promises');
-      const path = await import('path');
-      
-      // Remove the file
-      await fs.unlink(filePath);
-      
-      // Try to remove the directory if it's empty
-      const dir = path.dirname(filePath);
-      try {
-        await fs.rmdir(dir);
-      } catch {
-        // Directory not empty or other error, ignore
-      }
-    } catch (error) {
-      // Ignore cleanup errors
-    }
-  }
 
   /**
    * Execute test code directly (creates temporary file) with enhanced reliability
@@ -648,7 +606,7 @@ export class TestCafeService {
       }
 
       // Create temporary file
-      tempFile = await this.createTempTestFile(testCode);
+      tempFile = await createTempTestFile(testCode, 'testcafe-mcp-', 'temp-test.js');
       
       // Execute the test
       const result = await this.executeTest(tempFile, options);
@@ -662,7 +620,7 @@ export class TestCafeService {
     } finally {
       // Clean up temporary file
       if (tempFile) {
-        await this.cleanupTempFile(tempFile);
+        await cleanupTempFile(tempFile);
       }
     }
   }
